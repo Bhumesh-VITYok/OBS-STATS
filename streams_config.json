@@ -1,0 +1,22 @@
+{
+  "streams": [
+    {
+      "id": "stream_2qk2kcu",
+      "name": "dragon",
+      "host": "10.10.101.130",
+      "port": 4455,
+      "password": "123456",
+      "pingTarget": "10.10.101.130",
+      "networkLabel": "Ethernet Realtek 2.5GbE"
+    },
+    {
+      "id": "stream_4u2l9wj",
+      "name": "backyuo",
+      "host": "10.10.101.130",
+      "port": 4455,
+      "password": "123456",
+      "pingTarget": "8.8.8.8",
+      "networkLabel": "Ethernet Realtek 2.5GbE"
+    }
+  ]
+}

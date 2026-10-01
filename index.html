@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OBS Broadcast Web Controller &amp; Multi-Stream Stats Monitor</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23ef4444%22/><circle cx=%2250%22 cy=%2250%22 r=%2220%22 fill=%22%23ffffff%22/></svg>">
+</head>
+<body>
+
+  <!-- Top Global Broadcast Bar -->
+  <header class="top-header">
+    <div class="header-left">
+      <div class="brand-logo">
+        <svg class="obs-icon" viewBox="0 0 100 100" fill="currentColor">
+          <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="8"/>
+          <path d="M 50 15 A 35 35 0 0 1 85 50 A 20 20 0 0 0 65 50 A 15 15 0 0 0 50 35 Z" fill="currentColor"/>
+          <path d="M 85 50 A 35 35 0 0 1 32 80 A 20 20 0 0 0 42 62 A 15 15 0 0 0 57 62 Z" fill="currentColor"/>
+          <path d="M 32 80 A 35 35 0 0 1 50 15 A 20 20 0 0 0 50 35 A 15 15 0 0 0 38 48 Z" fill="currentColor"/>
+        </svg>
+        <div class="brand-info">
+          <h1>OBS WEB CONTROLLER</h1>
+          <span class="sub-title">BROADCAST MULTI-STREAM &amp; NETWORK MONITOR</span>
+        </div>
+      </div>
+
+      <!-- Master ON AIR Tally (prominent on top of site) -->
+      <div id="masterTally" class="master-tally offline">
+        <span class="tally-beacon"></span>
+        <div class="tally-text">
+          <span class="tally-status" id="masterStatusText">STANDBY</span>
+          <span class="tally-detail" id="masterDetailText">All Streams Offline</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center/Right Network Info & Controls -->
+    <div class="header-right">
+      <!-- Network Badge -->
+      <div class="network-badge" id="globalNetworkBadge" title="Host network connection">
+        <div class="net-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+        </div>
+        <div class="net-details">
+          <span class="net-name" id="globalNetName">Detecting Network...</span>
+          <span class="net-ip" id="globalNetIp">Local IP: ---</span>
+        </div>
+      </div>
+
+      <!-- Stats Dropdown Filter Button & Popover -->
+      <div class="dropdown-wrapper">
+        <button id="statsFilterBtn" class="btn btn-secondary dropdown-toggle" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          Filter Stats <span class="filter-count-badge" id="filterCountBadge">All</span>
+          <span class="chevron">▼</span>
+        </button>
+
+        <div id="statsFilterMenu" class="dropdown-menu hidden">
+          <div class="dropdown-header">
+            <h4>Visible Stats Cards</h4>
+            <div class="preset-buttons">
+              <button class="preset-btn" data-preset="all">Show All</button>
+              <button class="preset-btn" data-preset="stream">Stream Focus</button>
+              <button class="preset-btn" data-preset="hardware">Hardware</button>
+              <button class="preset-btn" data-preset="minimal">Minimal</button>
+            </div>
+          </div>
+
+          <div class="dropdown-checkboxes">
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="cpuUsage" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">CPU Usage</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="memoryUsage" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Memory Usage</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="availableDiskSpace" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Disk Space Available</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="diskFullApprox" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Disk Full In (approx.)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="fps" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">FPS (Frames Per Second)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="renderTime" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Average Time to Render Frame</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="renderLag" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Frames Missed (Rendering Lag)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="encodingLag" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Skipped Frames (Encoding Lag)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="upstreamStrip" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Upstream Delay &amp; Congestion Strip</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="pingWindow" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Network Ping Test Window &amp; Graph</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" data-stat="outputTable" checked>
+              <span class="custom-chk"></span>
+              <span class="chk-label">Output Table (Stream / Record / Bitrate)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- View Mode Selector -->
+      <div class="view-switch">
+        <button class="view-btn active" id="viewGridBtn" title="Grid View: See all streams simultaneously">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <rect x="3" y="3" width="8" height="8" rx="1.5"/>
+            <rect x="13" y="3" width="8" height="8" rx="1.5"/>
+            <rect x="3" y="13" width="8" height="8" rx="1.5"/>
+            <rect x="13" y="13" width="8" height="8" rx="1.5"/>
+          </svg>
+          Grid
+        </button>
+        <button class="view-btn" id="viewFocusBtn" title="Focus View: Focus on one stream with quick tabs">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+          </svg>
+          Focus
+        </button>
+      </div>
+
+      <!-- Action Buttons (Admin Only) -->
+      <button id="addStreamBtn" class="btn btn-primary admin-only" title="Add a new stream computer (IP &amp; Name)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Add Stream PC
+      </button>
+
+      <button id="resetAllBtn" class="btn btn-secondary admin-only" title="Reset stats counters on all connected OBS instances">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+        Reset All
+      </button>
+
+      <button id="restoreDeletedBtn" class="btn btn-secondary admin-only hidden" title="Restore last deleted stream PC" style="border-color: var(--color-warning); color: #fbbf24;">
+        ↩ Restore Deleted
+      </button>
+
+      <!-- Role Badge & Switcher -->
+      <div class="user-role-badge" id="userRoleBadge">
+        <span class="role-icon" id="roleIcon">👑</span>
+        <div class="role-text-wrap">
+          <span class="role-name" id="roleNameText">Admin</span>
+          <span class="role-sub" id="roleSubText">Full Access</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="authSwitchBtn" title="Switch role or logout">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mixed Content / HTTPS Security Notice Banner -->
+  <div id="httpsSecurityBanner" class="https-security-banner hidden">
+    <div class="security-banner-content">
+      <div class="sec-icon">⚠️</div>
+      <div class="sec-text">
+        <strong>Browser Security Notice (HTTPS &rarr; Local OBS Connection):</strong>
+        <span>Because this site is hosted on Netlify (<code>https://</code>), modern browsers block unencrypted WebSocket connections to local PC IP addresses (<code>ws://</code>) by default.</span>
+        <div class="sec-steps">
+          <span>👉 <strong>To fix in Chrome / Edge (10 Seconds):</strong> Click the <strong>tune / padlock icon</strong> on the left of the address bar &rarr; click <strong>Site settings</strong> &rarr; find <strong>"Insecure content"</strong> &rarr; change it to <strong>Allow</strong> &rarr; Refresh page.</span>
+        </div>
+      </div>
+      <button id="dismissSecBannerBtn" class="sec-close-btn" title="Dismiss">&times;</button>
+    </div>
+  </div>
+
+  <!-- Focused View Tabs Container (Hidden in Grid Mode) -->
+  <div id="focusTabsBar" class="focus-tabs-bar hidden">
+    <!-- Stream tabs dynamically inserted -->
+  </div>
+
+  <!-- Main Multi-Stream Dashboard -->
+  <main class="dashboard-container" id="dashboardContainer">
+    <!-- Stream Cards dynamically rendered here -->
+  </main>
+
+  <!-- Empty State when no streams configured -->
+  <div id="emptyState" class="empty-state hidden">
+    <div class="empty-card">
+      <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+      <h2>No OBS Stream PCs Configured</h2>
+      <p>Connect your OBS Studio stream computers (e.g., Hindi Stream, English Stream) to monitor live status, upstream delay, network quality, ping spikes, and stats in real-time.</p>
+      <div class="empty-actions admin-only">
+        <button id="emptyAddBtn" class="btn btn-primary btn-lg">
+          + Add Your First Stream PC
+        </button>
+        <button id="quickAddLocalBtn" class="btn btn-secondary btn-lg">
+          ⚡ Quick Connect Local OBS (127.0.0.1:4455)
+        </button>
+      </div>
+      <p class="role-user-only" style="display:none; color: var(--text-dim); margin-top: 12px; font-size: 0.85rem;">
+        🔒 You are logged in as User (Monitor Only). Please contact an administrator to configure OBS stream connections.
+      </p>
+    </div>
+  </div>
+
+  <!-- Add / Edit Stream PC Modal -->
+  <dialog id="streamDialog" class="modal-dialog">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon">📺</span>
+          <h3 id="modalTitle">Configure Stream PC</h3>
+        </div>
+        <button id="closeModalBtn" class="modal-close-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <form id="streamForm" method="dialog" class="modal-form">
+        <input type="hidden" id="editStreamId" value="">
+
+        <!-- Quick Fill Toolbar so user never re-types -->
+        <div style="display: flex; gap: 8px; align-items:center; background: var(--bg-card); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px dashed var(--border); flex-wrap: wrap;">
+          <span style="font-size:0.75rem; font-weight:700; color:var(--text-dim);">⚡ Quick Fill:</span>
+          <button type="button" id="quickFillLastBtn" class="btn btn-secondary btn-sm" style="font-size:0.75rem; padding: 3px 8px;">
+            💾 Fill Last Saved
+          </button>
+          <button type="button" id="quickFillRemoteBtn" class="btn btn-secondary btn-sm" style="font-size:0.75rem; padding: 3px 8px;">
+            🖥️ Streaming PC (10.10.101.130)
+          </button>
+          <button type="button" id="quickFillLocalBtn" class="btn btn-secondary btn-sm" style="font-size:0.75rem; padding: 3px 8px;">
+            💻 Local (127.0.0.1)
+          </button>
+        </div>
+
+        <!-- Stream Name (Saved like Hindi Stream, English Stream) -->
+        <div class="form-group">
+          <label for="streamNameInput">
+            Stream / PC Name <span class="req">*</span>
+            <small class="label-hint">(e.g., Hindi Stream, English Stream, Main Stage)</small>
+          </label>
+          <input type="text" id="streamNameInput" placeholder="Hindi Stream" required autofocus>
+        </div>
+
+        <div class="form-row">
+          <!-- Host IP -->
+          <div class="form-group col-7">
+            <label for="streamHostInput">
+              OBS IP Address / Host <span class="req">*</span>
+              <small class="label-hint">(e.g. 10.10.101.130 or 127.0.0.1)</small>
+            </label>
+            <input type="text" id="streamHostInput" placeholder="10.10.101.130" required>
+          </div>
+
+          <!-- Port -->
+          <div class="form-group col-5">
+            <label for="streamPortInput">WebSocket Port <span class="req">*</span></label>
+            <input type="number" id="streamPortInput" value="4455" min="1" max="65535" required>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="streamPasswordInput">
+            WebSocket Password
+            <small class="label-hint">(Found in OBS &gt; Tools &gt; WebSocket Server Settings)</small>
+          </label>
+          <div class="password-wrap">
+            <input type="password" id="streamPasswordInput" placeholder="Enter password (e.g. 123456 or 12345678)">
+            <button type="button" id="togglePasswordBtn" class="pw-toggle-btn" title="Show/Hide Password">👁</button>
+          </div>
+        </div>
+
+        <!-- Dedicated Streaming PC IP Ping Test Section -->
+        <div class="form-group" style="background: var(--bg-card); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="streamPingTargetInput" style="margin-bottom:0; font-weight:800; color:#fff;">
+              🎯 Streaming Network Ping IP (Continuous Ping Test)
+            </label>
+            <button type="button" id="copyHostToPingBtn" class="btn btn-secondary btn-sm" style="font-size:0.75rem; padding: 2px 8px;" title="Copy OBS Host IP to Ping Target">
+              ⚡ Use OBS Host IP
+            </button>
+          </div>
+          <small class="label-hint" style="margin-bottom:8px; display:block;">
+            IP address of the streaming PC or router to monitor ping, latency spikes &amp; export to Excel.
+          </small>
+          <input type="text" id="streamPingTargetInput" placeholder="e.g. 10.10.101.130" value="10.10.101.130">
+          <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-text btn-sm quick-ping-preset" data-ip="10.10.101.130">Streaming PC (10.10.101.130)</button>
+            <button type="button" class="btn btn-text btn-sm quick-ping-preset" data-ip="127.0.0.1">Localhost (127.0.0.1)</button>
+            <button type="button" class="btn btn-text btn-sm quick-ping-preset" data-ip="8.8.8.8">Google DNS (8.8.8.8)</button>
+            <button type="button" class="btn btn-text btn-sm quick-ping-preset" data-ip="1.1.1.1">Cloudflare (1.1.1.1)</button>
+          </div>
+        </div>
+
+        <!-- Network Interface Label -->
+        <div class="form-group">
+          <label for="streamNetworkLabelInput">
+            Network Label / Notes
+            <small class="label-hint">(e.g., Primary Fiber 1 Gbps, Realtek 2.5GbE)</small>
+          </label>
+          <input type="text" id="streamNetworkLabelInput" placeholder="Ethernet Realtek 2.5GbE">
+        </div>
+
+        <!-- Connection Test Banner -->
+        <div id="connTestResult" class="conn-test-banner hidden">
+          <span class="test-icon"></span>
+          <span class="test-message">Testing...</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="testConnBtn" class="btn btn-secondary">
+            ⚡ Test Connection
+          </button>
+          <div class="modal-submit-wrap">
+            <button type="button" id="cancelModalBtn" class="btn btn-text">Cancel</button>
+            <button type="submit" id="saveStreamBtn" class="btn btn-primary">Save &amp; Connect</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Login / Role Selector Modal -->
+  <dialog id="loginDialog" class="modal-dialog">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon">🔐</span>
+          <h3>OBS Broadcast Monitor Login</h3>
+        </div>
+      </div>
+      <div class="modal-body" style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+        <!-- Admin Access Form -->
+        <div class="auth-section">
+          <div style="margin-bottom: 12px;">
+            <div class="auth-badge-admin">👑 Admin Access</div>
+            <small style="color: var(--text-dim); display: block; margin-top: 4px;">
+              Full editing control: Start/stop streams &amp; recordings, edit stream configs, reset counters.
+            </small>
+          </div>
+          <form id="adminLoginForm" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="form-group">
+              <label for="adminUsernameInput">Username</label>
+              <input type="text" id="adminUsernameInput" value="admin" placeholder="admin" required>
+            </div>
+            <div class="form-group">
+              <label for="adminPasswordInput">Password</label>
+              <input type="password" id="adminPasswordInput" placeholder="Enter password " required>
+            </div>
+            <div id="adminLoginError" class="conn-test-banner error hidden">
+              <span>✕ Incorrect credentials! </span>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 4px;">
+              🔑 Login as Admin
+            </button>
+          </form>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 0.8rem; justify-content: center;">
+          <span style="height: 1px; background: var(--border); flex: 1;"></span>
+          <span>OR</span>
+          <span style="height: 1px; background: var(--border); flex: 1;"></span>
+        </div>
+
+        <!-- User / Monitor-Only Mode -->
+        <div class="auth-section">
+          <div style="margin-bottom: 12px;">
+            <div class="auth-badge-user">👁️ User / Viewer Mode</div>
+            <small style="color: var(--text-dim); display: block; margin-top: 4px;">
+              Monitor-only access: View live stream status, hardware stats, ping graphs &amp; Excel reports. All controls are locked and hidden.
+            </small>
+          </div>
+          <button type="button" id="continueAsUserBtn" class="btn btn-secondary btn-lg" style="width: 100%;">
+            👁️ Continue as User (No Password Needed)
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Scripts -->
+  <script src="obs-client.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
